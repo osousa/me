@@ -23,3 +23,11 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+
+    - name: create release 
+      uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: my-artifact
+        path: me
+      
