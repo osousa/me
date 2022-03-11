@@ -5,7 +5,7 @@ import (
     "net/http"
 )
 
-//--little comment
+//1--little comment
 func HelloWorld(res http.ResponseWriter, req *http.Request) {
     fmt.Fprint(res, "Hello World")
 }
