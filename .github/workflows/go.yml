@@ -7,7 +7,6 @@ on:
     branches: [ main ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -30,6 +29,18 @@ jobs:
       with:
         name: build
         path: me
+        
+    # extract branch name
+    - name: Extract branch name
+      if: github.event_name != 'pull_request'
+      shell: bash
+      run: echo "::set-output name=BRANCH_NAME::$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+
+    # extract branch name on pull request
+    - name: Print branch name
+      if: github.event_name == 'pull_request'
+      run: echo "::set-output name=BRANCH_NAME::$(echo ${GITHUB_HEAD_REF})"
       
     - name: version
       run: echo "::set-output name=version::$(./me --version)"
@@ -40,7 +51,7 @@ jobs:
       with:
         draft: false
         prerelease: false
-        release_name: ${{ steps.version.outputs.version }}
+        release_name: ${{ steps.extract_branch.outputs.BRANCH_NAME }}
         tag_name: ${{ github.ref }}
         body_path: CHANGELOG.md
       env:
