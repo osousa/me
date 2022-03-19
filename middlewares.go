@@ -20,7 +20,7 @@ type SecureHeaders struct{
     header map[string]string
 }
 
-func NewMiddlewares(name string) Middlewares {
+func InitMiddlewares(name string) Middlewares {
     return Middlewares{name:name, active:[]Middleware{}}
 }
 
@@ -52,8 +52,8 @@ func (s SecureHeaders) UseMiddleware(next http.Handler) http.Handler{
     })
 }
 
-func InitMiddlewares(name string) Middlewares{
-    m := NewMiddlewares(name)
+func NewMiddlewares(name string) Middlewares{
+    m := InitMiddlewares(name)
     m.SetDefaultMiddlewares()
     return m
 }

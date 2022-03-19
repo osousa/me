@@ -40,8 +40,6 @@ func main() {
     //
     middlewares  := NewMiddlewares("default")
     router       := NewRouter("default", middlewares)
-    router.InitRoutes()
-
 
 
 
