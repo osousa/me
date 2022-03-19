@@ -6,7 +6,6 @@ import (
     "time"
     "log"
     "fmt"
-    "db"
 )
 
 
@@ -19,7 +18,6 @@ func version() string{
     return version
 }
 
-
 func main() {
     versionPtr  := flag.Bool("version", false, "versioning")
 
@@ -30,22 +28,32 @@ func main() {
         return
     }
 
-    db, _     := database.ConnectDB("osousa")
-    state     := db.GetConnState()
-    router, _ := StartRouter("mainRouter")
+    // Fire up the database, no need to disconnect.
+    // Just make sure all connections are deferred/closed.
+    //
+    db, _     := ConnectDB("osousa")
+    _          = db.GetConnState()
 
-    router.AddRoute("/",        "home",     "Welcome, this is home",            nil)
-    router.AddRoute("/contacts","contacts", "You can contact me through here",  nil)
 
-    fmt.Println(state)
+    // Start a router and activate preconfigured routes.
+    // Middleware association should probably be done here.
+    //
+    middlewares  := NewMiddlewares("default")
+    router       := NewRouter("default", middlewares)
+    router.InitRoutes()
 
+
+
+
+    // Create a Config struct for server later on
+    // Do not use middlewares here.
+    //
     s := &http.Server{
         Addr:           ":8080",
-        Handler:        router.GetMux(),
+        Handler:        middlewares.UseDefaultMiddlewares(router),
         ReadTimeout:    10 * time.Second,
         WriteTimeout:   10 * time.Second,
         MaxHeaderBytes: 1 << 20,
     }
     log.Fatal(s.ListenAndServe())
 }
-
