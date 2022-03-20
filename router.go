@@ -26,13 +26,15 @@ type route struct {
     test Controller
 }
 
+
 func (r *Router) SetRoutes(){
-    r.AddRoute("GET", "/", home,  []Middleware{r.middlewares.auth},NewController("home"))
-    r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, nil, NewController("about"))
-    r.AddRoute("GET", "/contact", contact, nil, NewController("home"))
-    r.AddRoute("GET", "/api/widgets", apiGetWidgets, nil, NewController("home"))
-    r.AddRoute("GET", "/admin", apiGetWidgets, nil, NewController("home"))
-    /* r.AddRoute("POST", "/api/widgets", apiCreateWidget, NewController("home"))
+    r.AddRoute("GET", "/",                      home,            NewController("home"),   nil)
+    r.AddRoute("GET", "/api/widgets/([^/]+)",   apiUpdateWidget, NewController("about"),  nil)
+    r.AddRoute("GET", "/contact",               contact,         NewController("home"),   nil)
+    r.AddRoute("GET", "/api/widgets",           apiGetWidgets,   NewController("home"),   nil)
+    r.AddRoute("GET", "/admin",                 apiGetWidgets,   NewController("home"),   []Middleware{r.middlewares.auth})
+    /* 
+    r.AddRoute("POST", "/api/widgets", apiCreateWidget, NewController("home"))
     r.AddRoute("POST", "/api/widgets/([^/]+)/parts", apiCreateWidgetPart, NewController("home"))
     r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/update", apiUpdateWidgetPart, NewController("home"))
     r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/delete", apiDeleteWidgetPart, NewController("home"))
@@ -47,8 +49,8 @@ func NewRouter(name string, midwares Middlewares)(Router){
     return router
 }
 
-func (r *Router) AddRoute(method, pattern string, handler http.HandlerFunc, mware []Middleware, controller Controller) {
-    r.routes = append(r.routes,route{method, regexp.MustCompile("^" + pattern + "$"), handler, mware, controller })
+func (r *Router) AddRoute(method, pattern string, handler http.HandlerFunc, controller Controller, mware []Middleware) {
+    r.routes = append(r.routes,route {method, regexp.MustCompile("^" + pattern + "$"), handler, mware, controller })
 }
 
 func (rt Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -61,14 +63,17 @@ func (rt Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
                 continue
             }
             ctx := context.WithValue(r.Context(), ctxKey{}, struct{matches []string; controller Controller}{matches, route.test})
-            temp_handler := http.HandlerFunc(route.handler)
-            var res http.Handler
-            for _,m := range(route.middlewares){
-                fmt.Println(m)
-                res = m.UseMiddleware(temp_handler)
+            if(route.middlewares != nil){
+                temp_handler := http.HandlerFunc(route.handler)
+                var res http.Handler
+                for _,m := range(route.middlewares){
+                    fmt.Println(m)
+                    res = m.UseMiddleware(temp_handler)
+                }
+                res.ServeHTTP(w, r.WithContext(ctx))
+            }else{
+                route.handler(w, r.WithContext(ctx))
             }
-            res.ServeHTTP(w, r.WithContext(ctx))
-            //route.handler(w, r.WithContext(ctx))
             return
         }
     }
