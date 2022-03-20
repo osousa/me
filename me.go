@@ -48,7 +48,7 @@ func main() {
     //
     s := &http.Server{
         Addr:           ":8080",
-        Handler:        middlewares.UseDefaultMiddlewares(router),
+        Handler:        middlewares.UseCommonMiddlewares(router),
         ReadTimeout:    10 * time.Second,
         WriteTimeout:   10 * time.Second,
         MaxHeaderBytes: 1 << 20,

@@ -22,31 +22,33 @@ type route struct {
     method  string
     regex   *regexp.Regexp
     handler http.HandlerFunc
+    middlewares []Middleware
     test Controller
 }
 
-func (r *Router) InitRoutes(){
-    r.AddRoute("GET", "/", home, NewControl("home"))
-    r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, NewControl("about"))
-    r.AddRoute("GET", "/contact", contact, NewControl("home"))
-    r.AddRoute("GET", "/api/widgets", apiGetWidgets, NewControl("home"))
-    /* r.AddRoute("POST", "/api/widgets", apiCreateWidget, NewControl("home"))
-    r.AddRoute("POST", "/api/widgets/([^/]+)/parts", apiCreateWidgetPart, NewControl("home"))
-    r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/update", apiUpdateWidgetPart, NewControl("home"))
-    r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/delete", apiDeleteWidgetPart, NewControl("home"))
-    r.AddRoute("GET", "/([^/]+)", widget, NewControl("home"))
-    r.AddRoute("GET", "/([^/]+)/admin", widgetAdmin, NewControl("home"))
-    r.AddRoute("POST", "/([^/]+)/image", widgetImage, NewControl("home")) */
+func (r *Router) SetRoutes(){
+    r.AddRoute("GET", "/", home,  []Middleware{r.middlewares.auth},NewController("home"))
+    r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, nil, NewController("about"))
+    r.AddRoute("GET", "/contact", contact, nil, NewController("home"))
+    r.AddRoute("GET", "/api/widgets", apiGetWidgets, nil, NewController("home"))
+    r.AddRoute("GET", "/admin", apiGetWidgets, nil, NewController("home"))
+    /* r.AddRoute("POST", "/api/widgets", apiCreateWidget, NewController("home"))
+    r.AddRoute("POST", "/api/widgets/([^/]+)/parts", apiCreateWidgetPart, NewController("home"))
+    r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/update", apiUpdateWidgetPart, NewController("home"))
+    r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/delete", apiDeleteWidgetPart, NewController("home"))
+    r.AddRoute("GET", "/([^/]+)", widget, NewController("home"))
+    r.AddRoute("GET", "/([^/]+)/admin", widgetAdmin, NewController("home"))
+    r.AddRoute("POST", "/([^/]+)/image", widgetImage, NewController("home")) */
 }
 
 func NewRouter(name string, midwares Middlewares)(Router){
     router := Router{name, nil, midwares}
-    router.InitRoutes()
+    router.SetRoutes()
     return router
 }
 
-func (r *Router) AddRoute(method, pattern string, handler http.HandlerFunc, controller Controller) {
-    r.routes = append(r.routes,route{method, regexp.MustCompile("^" + pattern + "$"), handler, controller })
+func (r *Router) AddRoute(method, pattern string, handler http.HandlerFunc, mware []Middleware, controller Controller) {
+    r.routes = append(r.routes,route{method, regexp.MustCompile("^" + pattern + "$"), handler, mware, controller })
 }
 
 func (rt Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +61,14 @@ func (rt Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
                 continue
             }
             ctx := context.WithValue(r.Context(), ctxKey{}, struct{matches []string; controller Controller}{matches, route.test})
-            route.handler(w, r.WithContext(ctx))
+            temp_handler := http.HandlerFunc(route.handler)
+            var res http.Handler
+            for _,m := range(route.middlewares){
+                fmt.Println(m)
+                res = m.UseMiddleware(temp_handler)
+            }
+            res.ServeHTTP(w, r.WithContext(ctx))
+            //route.handler(w, r.WithContext(ctx))
             return
         }
     }

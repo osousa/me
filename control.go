@@ -21,7 +21,7 @@ func (c Control) Execute(w io.Writer){
     c.template.ExecuteTemplate(w, "layout", struct{Title string}{Title:"ok"})
 }
 
-func NewControl(name string)(Control){
+func NewController(name string)(Control){
     wd, err := os.Getwd()
     if err != nil {
        log.Fatal(err)
