@@ -1,57 +1,53 @@
 package main
 
 import (
-    "net/http"
-    "flag"
-    "time"
-    "log"
-    "fmt"
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"time"
 )
 
-
 type timeHandler struct {
-    format string
+	format string
 }
 
-func version() string{
-    version := "0.1.1";
-    return version
+func version() string {
+	version := "0.1.1"
+	return version
 }
 
 func main() {
-    versionPtr  := flag.Bool("version", false, "versioning")
+	versionPtr := flag.Bool("version", false, "versioning")
 
-    flag.Parse()
+	flag.Parse()
 
-    if *versionPtr != false {
-        fmt.Println(version())
-        return
-    }
+	if *versionPtr != false {
+		fmt.Println(version())
+		return
+	}
 
-    // Fire up the database, no need to disconnect.
-    // Just make sure all connections are deferred/closed.
-    //
-    db, _     := ConnectDB("osousa")
-    _          = db.GetConnState()
+	// Fire up the database, no need to disconnect.
+	// Just make sure all connections are deferred/closed.
+	//
+	db, _ := ConnectDB("osousa")
+	_ = db.GetConnState()
 
+	// Start a router and activate preconfigured routes.
+	// Middleware association should probably be done here.
+	//
+	middlewares := NewMiddlewares("default")
+	router := NewRouter("default", middlewares)
 
-    // Start a router and activate preconfigured routes.
-    // Middleware association should probably be done here.
-    //
-    middlewares  := NewMiddlewares("default")
-    router       := NewRouter("default", middlewares)
-
-
-
-    // Create a Config struct for server later on
-    // Do not use middlewares here.
-    //
-    s := &http.Server{
-        Addr:           ":8080",
-        Handler:        middlewares.UseCommonMiddlewares(router),
-        ReadTimeout:    10 * time.Second,
-        WriteTimeout:   10 * time.Second,
-        MaxHeaderBytes: 1 << 20,
-    }
-    log.Fatal(s.ListenAndServe())
+	// Create a Config struct for server later on
+	// Do not use middlewares here.
+	//
+	s := &http.Server{
+		Addr:           ":8080",
+		Handler:        middlewares.UseCommonMiddlewares(router),
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	log.Fatal(s.ListenAndServe())
 }

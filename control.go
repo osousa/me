@@ -28,7 +28,7 @@ func NewController(name string)(Control){
     }
     tpl, err := template.ParseFiles(wd + "/html/"+name+".tpl")
     if err != nil{
-        log.Fatalln("Make sure your NewControl parameter equals a template name: %s", err.Error())
+        log.Fatalf("Make sure your NewControl parameter equals a template name: %s", err.Error())
     }
     c := Control{name, tpl}
     return c

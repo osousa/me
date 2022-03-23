@@ -36,6 +36,16 @@ func NewAuth(name string) Auth {
 
 func (a Auth) UseMiddleware(next http.Handler) http.Handler{
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+        err := r.ParseForm()
+        if err != nil {
+           http.Error(w, "Please pass the data as URL form encoded",http.StatusBadRequest)
+          return
+        }
+        username := r.PostForm.Get("username")
+        password := r.PostForm.Get("password")
+        log.Printf("Username: %s - Password: %s\n", username, password)
+        log.Println(r)
+
         log.Println("This will authenticate... nice.")
         next.ServeHTTP(w, r)
     })
@@ -47,7 +57,7 @@ func NewSecureHeaders(name string) SecureHeaders {
 
 func (s *SecureHeaders) SetSecureHeaders(){
     s.header = map[string]string{   "Content-Security-Policy"       : "default-src 'self' osousa.me; connect-src 'self';",
-                                    "Content-Type"                  : "application/json",
+                                    "Content-Type"                  : "text/html;",
                                     "X-XSS-Protection"              : "1; mode=block",
                                     "Cross-Origin-Resource-Policy"  : "same-site",
                                     "X-Content-Type-Options"        : "nosniff",
