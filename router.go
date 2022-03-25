@@ -24,6 +24,8 @@ type route struct {
 	ctrl        Controller
 }
 
+type Extend interface{}
+
 func (r *Router) SetRoutes() {
 	r.AddRoute("GET", "/", home, NewController("home"), nil)
 	r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, NewController("about"), nil)
