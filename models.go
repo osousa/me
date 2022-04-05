@@ -1,9 +1,5 @@
 package main
 
-import (
-	"time"
-)
-
 type Post struct {
 	title string
 	body  string
@@ -11,36 +7,65 @@ type Post struct {
 }
 
 type User struct {
-	name       string
-	pass       string
-	experience []Experience
+	Id         int     `db:"id"`
+	Name       *string `db:"username"`
+	Pass       *string `db:"password"`
+	Experience *[]Experience
 }
 
-type Exp struct {
-	description string
-	position    string
-	company     string
-	from        time.Time
-	term        string
-	to          time.Time
+type Experience struct {
+	Id          int     `db:"id"`
+	Description *string `db:"desc"`
+	Position    *string `db:"position"`
+	Company     *string `db:"company"`
+	// From        string `db:"from"`
+	// Term        string `db:"term"`
+	// To          string `db:"to"`
 }
 
-type any = interface{}
-
-type ok any
-
-type Experience interface {
+type Exp interface {
 	AddExp(desc, position, company, term string) error
-	GetExperienceAll() ([]Exp, error)
-	GetExperience() ([]Exp, error)
+	GetExperienceAll() ([]Experience, error)
+	GetExperience() ([]Experience, error)
 }
 
-func (u User) AddExp(desc, pos, comp, term string) error {
+type Object interface {
+	GetById(int) error
+	Save() error
+}
 
-	//todo
+func (u *User) Save() error {
+	DB.InsertRow(u)
 	return nil
 }
 
-func (p Post) NewPost(title, body string) {
-	//todo
+func (e *Experience) Save() error {
+	return nil
+}
+
+func (u *User) GetById(user_id int) error {
+	tmp := &User{0, new(string), new(string), new([]Experience)}
+
+	err := DB.GetById(tmp, user_id)
+	if err != nil {
+		return err
+	}
+
+	*u = *tmp
+	return nil
+}
+
+func (e *Experience) GetById(id int) error {
+	tmp := &Experience{0, new(string), new(string), new(string)}
+
+	err := DB.GetById(tmp, id)
+	if err != nil {
+		return err
+	}
+	*e = *tmp
+	return nil
+}
+
+func GetById(o Object, id int) error {
+	return o.GetById(id)
 }
