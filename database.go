@@ -83,50 +83,6 @@ func structToStuctFieldString(structure interface{}, strField reflect.StructFiel
 	return *ret
 }
 
-// structure parameter must be an address pointing to a struct type val and its
-// fields should be pointers,otherwise it will throw an error. It applies where
-// pointers are needed, excluding for example: int, float,etc. Make sure you'll
-// set the right types beforehand . This will later fetch the field by tag, and
-// not "Id" named field
-func (d *db) GetById(structure interface{}, id int) error {
-	structPtr := reflect.ValueOf(structure)
-	struct_name := structPtr.Type().Elem().Name()
-
-	if structPtr.Type().Kind() != reflect.Ptr {
-		return errors.New("You must Dereference Struct")
-	}
-
-	columns, fields, _ := structToSlices(structure)
-
-	row, err := d.db.Query("SELECT "+strings.Join(columns[:], ", ")+" FROM "+struct_name+" WHERE ID = ?", strconv.Itoa(id))
-	defer row.Close()
-	if err != nil || err == sql.ErrNoRows {
-		panic(err.Error())
-	}
-
-	colTypes, err := row.ColumnTypes()
-	values := make([]interface{}, len(columns))
-	scan_args := make([]interface{}, len(columns))
-	for i := range values {
-		scan_args[i] = &values[i]
-	}
-	if row.Next() {
-		err = row.Scan(scan_args...)
-		if err != nil {
-			panic(err.Error())
-		}
-	} else {
-		return fmt.Errorf("%s object with Id %d does not exist", struct_name, id)
-	}
-	for i, arg := range scan_args {
-		err := SetElem(colTypes[i].DatabaseTypeName(), fields[i], arg, structPtr.Elem().FieldByName(fields[i]).Addr())
-		if err != nil {
-			panic(err)
-		}
-	}
-	return nil
-}
-
 // From a tagged "db" struct Produces a tuple with the 1st being a string slice
 // of the values from key tag "db", the 2nd a string slice of the corresponding
 // field names of said struct,  and the 3rd a reflect.StructField slice contain
@@ -174,6 +130,50 @@ func interfaceSlice(strlst []string) []interface{} {
 		interfaceSlice[i] = d
 	}
 	return interfaceSlice
+}
+
+// structure parameter must be an address pointing to a struct type val and its
+// fields should be pointers,otherwise it will throw an error. It applies where
+// pointers are needed, excluding for example: int, float,etc. Make sure you'll
+// set the right types beforehand . This will later fetch the field by tag, and
+// not "Id" named field
+func (d *db) GetById(structure interface{}, id int) error {
+	structPtr := reflect.ValueOf(structure)
+	struct_name := structPtr.Type().Elem().Name()
+
+	if structPtr.Type().Kind() != reflect.Ptr {
+		return errors.New("You must Dereference Struct")
+	}
+
+	columns, fields, _ := structToSlices(structure)
+
+	row, err := d.db.Query("SELECT "+strings.Join(columns[:], ", ")+" FROM "+struct_name+" WHERE ID = ?", strconv.Itoa(id))
+	defer row.Close()
+	if err != nil || err == sql.ErrNoRows {
+		panic(err.Error())
+	}
+
+	colTypes, err := row.ColumnTypes()
+	values := make([]interface{}, len(columns))
+	scan_args := make([]interface{}, len(columns))
+	for i := range values {
+		scan_args[i] = &values[i]
+	}
+	if row.Next() {
+		err = row.Scan(scan_args...)
+		if err != nil {
+			panic(err.Error())
+		}
+	} else {
+		return fmt.Errorf("%s object with Id %d does not exist", struct_name, id)
+	}
+	for i, arg := range scan_args {
+		err := SetElem(colTypes[i].DatabaseTypeName(), fields[i], arg, structPtr.Elem().FieldByName(fields[i]).Addr())
+		if err != nil {
+			panic(err)
+		}
+	}
+	return nil
 }
 
 // To save changes made to an existing interface/struct on the database, update
