@@ -5,10 +5,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 var DB = &db{}
+
+var Info = log.New(os.Stdout, "\u001b[34mINFO: \u001B[0m", log.LstdFlags|log.Lshortfile)
+var Warning = log.New(os.Stdout, "\u001b[33mWARNING: \u001B[0m", log.LstdFlags|log.Lshortfile)
+var Error = log.New(os.Stdout, "\u001b[31mERROR: \u001b[0m", log.LstdFlags|log.Lshortfile)
+var Debug = log.New(os.Stdout, "\u001b[36mDEBUG: \u001B[0m", log.LstdFlags|log.Lshortfile)
 
 func version() string {
 	version := "0.1.1"
@@ -44,10 +50,12 @@ func main() {
 	fmt.Println(err_user)
 	fmt.Println("user: ", user)
 	fmt.Println("user.Pass: ", *user.Pass)
-	new_pass := "hashedbithcs"
+	new_pass := "do_tests_cmon_Man"
 	user.Pass = &new_pass
-	user.Save()
-
+	err := user.Save()
+	if err != nil {
+		Warning.Println(err)
+	}
 	exp := new(Experience)
 	err_exp := GetById(exp, 9)
 	//exp := new(Experience)

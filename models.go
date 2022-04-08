@@ -35,7 +35,10 @@ type Object interface {
 }
 
 func (u *User) Save() error {
-	DB.InsertRow(u)
+	err := DB.UpdateRow(u)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
