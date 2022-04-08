@@ -37,6 +37,16 @@ func ConnectDB(name string) (*db, error) {
 	return db, nil
 }
 
+// Useful to produce a slice of interface{} values, from a slice of string vals
+// particularly  to pass as variadic parameters to Query , Exec or similar func
+func interfaceSlice(strlst []string) []interface{} {
+	var interfaceSlice []interface{} = make([]interface{}, len(strlst))
+	for i, d := range strlst {
+		interfaceSlice[i] = d
+	}
+	return interfaceSlice
+}
+
 // Sets struct fields' values, given the mysql type , field name and arg to set
 // the field pointer ptr,the ptr value must be the address of the field pointer
 // thus deferencing twice.  Some of the struct's fields must be of pointer type
@@ -120,16 +130,6 @@ func structFieldFromTag(sFieldSlice []reflect.StructField, tag_key, tag_val stri
 		}
 	}
 	return alias
-}
-
-// Useful to produce a slice of interface{} values, from a slice of string vals
-// particularly  to pass as variadic parameters to Query , Exec or similar func
-func interfaceSlice(strlst []string) []interface{} {
-	var interfaceSlice []interface{} = make([]interface{}, len(strlst))
-	for i, d := range strlst {
-		interfaceSlice[i] = d
-	}
-	return interfaceSlice
 }
 
 // structure parameter must be an address pointing to a struct type val and its
