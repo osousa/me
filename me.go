@@ -44,7 +44,8 @@ func main() {
 	fmt.Println(err_user)
 	fmt.Println("user: ", user)
 	fmt.Println("user.Pass: ", *user.Pass)
-	fmt.Println("user.Pass: ", user.Pass)
+	new_pass := "hashedbithcs"
+	user.Pass = &new_pass
 	user.Save()
 
 	exp := new(Experience)
