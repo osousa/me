@@ -26,8 +26,11 @@ func (d db) GetConnState() bool {
 	return d.connected
 }
 
-func ConnectDB(name string) (*db, error) {
-	dbase, err := sql.Open("mysql", "osousa:password@tcp(127.0.0.1:3306)/osousa")
+// Performs a connection to the database passed as "name" parameter and it must
+// be referenced on the  .ENV file followed by the password in order to connect
+// otherwise a panic occurs. There is no need to defer Disconnect.
+func ConnectDB(name, password, database string) (*db, error) {
+	dbase, err := sql.Open("mysql", name+":"+password+"@tcp(127.0.0.1:3306)/"+database)
 	if err != nil {
 		panic("Unable to connect to db")
 	}

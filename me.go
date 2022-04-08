@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv"
 )
 
 var DB = &db{}
@@ -16,25 +19,31 @@ var Warning = log.New(os.Stdout, "\u001b[33mWARNING: \u001B[0m", log.LstdFlags|l
 var Error = log.New(os.Stdout, "\u001b[31mERROR: \u001b[0m", log.LstdFlags|log.Lshortfile)
 var Debug = log.New(os.Stdout, "\u001b[36mDEBUG: \u001B[0m", log.LstdFlags|log.Lshortfile)
 
-func version() string {
-	version := "0.1.1"
-	return version
-}
-
 func main() {
-	versionPtr := flag.Bool("version", false, "versioning")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file. Does it exist?")
+	}
+
+	db_pass := os.Getenv("DATABASE_PASSWORD")
+	db_name := os.Getenv("DATABASE_NAME")
+	db_user := os.Getenv("DATABASE_USER")
+
+	Info.Println(db_name)
+	Info.Println(db_pass)
 
 	flag.Parse()
 
+	versionPtr := flag.Bool("version", false, "versioning")
 	if *versionPtr != false {
-		fmt.Println(version())
+		fmt.Println(os.Getenv("VERSION"))
 		return
 	}
 
 	// Fire up the database, no need to disconnect.
 	// Just make sure all connections are deferred/closed.
 	//
-	DB, _ = ConnectDB("osousa")
+	DB, _ = ConnectDB(db_user, db_pass, db_name)
 	_ = DB.GetConnState()
 
 	// Start a router and activate preconfigured routes.
@@ -52,9 +61,9 @@ func main() {
 	fmt.Println("user.Pass: ", *user.Pass)
 	new_pass := "do_tests_cmon_Man"
 	user.Pass = &new_pass
-	err := user.Save()
-	if err != nil {
-		Warning.Println(err)
+	err_usr := user.Save()
+	if err_usr != nil {
+		Warning.Println(err_usr)
 	}
 	exp := new(Experience)
 	err_exp := GetById(exp, 9)

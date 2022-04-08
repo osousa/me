@@ -34,6 +34,9 @@ type Object interface {
 	Save() error
 }
 
+// To save a variable of type struct to the database , we use the save() method
+// Notice that save wont work if called upon a struct pointer that has not been
+// previously created using  Create()  or does not exist at all in our database
 func (u *User) Save() error {
 	err := DB.UpdateRow(u)
 	if err != nil {
@@ -42,10 +45,22 @@ func (u *User) Save() error {
 	return nil
 }
 
+// To save a variable of type struct to the database , we use the save() method
+// Notice that save wont work if called upon a struct pointer that has not been
+// previously created using  Create()  or does not exist at all in our database
 func (e *Experience) Save() error {
+	err := DB.UpdateRow(e)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
+// GetById method changes the object pointed by e, and for that change to occur
+// we must store an address at tmp, then passing it to the DB.GetById as change
+// will happen in place , do not try to modify the original variable e . The id
+// value should exist on a database as a primary key of the corresponding table
+// with the same name as the struct (User in this case)
 func (u *User) GetById(user_id int) error {
 	tmp := &User{0, new(string), new(string), new([]Experience)}
 
@@ -58,6 +73,11 @@ func (u *User) GetById(user_id int) error {
 	return nil
 }
 
+// GetById method changes the object pointed by e, and for that change to occur
+// we must store an address at tmp, then passing it to the DB.GetById as change
+// will happen in place , do not try to modify the original variable e . The id
+// value should exist on a database as a primary key of the corresponding table
+// with the same name as the struct (Experience in this case)
 func (e *Experience) GetById(id int) error {
 	tmp := &Experience{0, new(string), new(string), new(string)}
 
@@ -69,6 +89,10 @@ func (e *Experience) GetById(id int) error {
 	return nil
 }
 
+// Parameter "o" of Type Object accepts any variable that implements the Object
+// interface, which happens to be the case for type User and Experience structs
+// GetById accepts an o pointer and id int,the Object type variable will change
+// in place, no error should return if Get is performed correctly
 func GetById(o Object, id int) error {
 	return o.GetById(id)
 }

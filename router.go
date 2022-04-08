@@ -26,6 +26,10 @@ type route struct {
 
 type Extend interface{}
 
+// Routes are set on Init . Each route added must have a method associated with
+// it, as well as a View followed by a controller with the name of said View as
+// parameter. An optional slice of type Middleware should be passed as the last
+// parameter in order to manipulate the *Request accordingly.See middlewares.go
 func (r *Router) SetRoutes() {
 	r.AddRoute("GET", "/", home, NewController("home"), nil)
 	r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, NewController("about"), nil)
@@ -43,16 +47,29 @@ func (r *Router) SetRoutes() {
 	*/
 }
 
+// Instantiating Router named name with Middlewares slice.  These are geneneric
+// Middlewares hereafter applied to every inbound or outbound  *Request that is
+// made to the server and SetRoutes() is called in order to add routes to route
 func NewRouter(name string, midwares Middlewares) Router {
 	router := Router{name, nil, midwares}
 	router.SetRoutes()
 	return router
 }
 
+// Appends  new Route to Routes from Router. Pay attention to what patterns are
+// added to avoid vulnerabilites.They should be fairly strict, the router isn't
+// sophisticated, things can go wrong quickly
 func (r *Router) AddRoute(method, pattern string, handler http.HandlerFunc, controller Controller, mware []Middleware) {
 	r.routes = append(r.routes, route{method, regexp.MustCompile("^" + pattern + "$"), handler, mware, controller})
 }
 
+// The Router should implement Handler interface,thus the signature must be the
+// same . The first  loop will select the corresponding route through the regex
+// specified on creation, confirming if the method is allowed , for two methods
+// to be allowed on the same route , just add another route and set a different
+// Method (i.e.: "GET" , "UPDATE", etc) ; In order to be able to read variables
+// extracted using the regex engine, we use context.WithValue method and add it
+// to the  *Request.WithContext() . Check logic if middlewares are applied here
 func (rt Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var allow []string
 	for _, route := range rt.routes {
@@ -90,6 +107,8 @@ func (rt Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type ctxKey struct{}
 
+// Extract URL parameter that matched against the regex and was passed through
+// Context on http.Request,the index will dictate the position to be extracted
 func getField(r *http.Request, index int) (string, Controller) {
 	fields := r.Context().Value(ctxKey{}).(struct {
 		matches    []string
