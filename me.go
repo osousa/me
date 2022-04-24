@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	_ "github.com/joho/godotenv"
 )
 
 var DB = &db{}
@@ -52,28 +51,61 @@ func main() {
 	middlewares := NewMiddlewares("default")
 	router := NewRouter("default", middlewares)
 
-	user := new(User)
-	err_user := GetById(user, 9)
 	//user := new(User)
-	//err_user := user.GetById(9)
-	fmt.Println(err_user)
-	fmt.Println("user: ", user)
-	fmt.Println("user.Pass: ", *user.Pass)
-	new_pass := "do_tests_cmon_Man"
-	user.Pass = &new_pass
-	err_usr := user.Save()
-	if err_usr != nil {
-		Warning.Println(err_usr)
-	}
-	exp := new(Experience)
-	err_exp := GetById(exp, 9)
-	//exp := new(Experience)
-	//err_exp := exp.GetById(9)
-	fmt.Println(err_exp)
-	fmt.Println("Experience: ", exp)
-	fmt.Println("Experience.Company: ", *exp.Company)
-	fmt.Println("Experience.Company: ", exp.Company)
+	//err_user := GetById(user, 9)
+	////user := new(User)
+	////err_user := user.GetById(9)
+	//fmt.Println(err_user)
+	//fmt.Println("user: ", user)
+	//fmt.Println("user.Pass: ", *user.Pass)
+	//new_pass := "do_tests_cmon_Man"
+	//user.Pass = &new_pass
+	//err_usr := user.Save()
+	//if err_usr != nil {
+	//	Warning.Println(err_usr)
+	//}
 
+	//post := new(Post)
+	//err_post := GetById(post, 9)
+	////post := new(User)
+	////err_post := user.GetById(9)
+	//if post == nil {
+	//	Warning.Println("post is nil")
+	//}
+	//fmt.Println("error Post : ", err_post)
+	//fmt.Println("post: ", post)
+	//new_title := "do_tests_cmon_Man"
+	//post.Title = &new_title
+	//err_pst := post.Save()
+	//if err_pst != nil {
+	//	Warning.Println(err_pst)
+	//}
+
+	//fmt.Println(err_pst)
+	//fmt.Println("Post: ", post)
+	//fmt.Println("Post Title : ", *post.Title)
+	//fmt.Println("Post body : ", *post.Body)
+	//fmt.Println("Post date: ", *post.Date)
+
+	//exp := new(Experience)
+	//err_exp := GetById(exp, 9)
+	////exp := new(Experience)
+	////err_exp := exp.GetById(9)
+	//fmt.Println(err_exp)
+	//fmt.Println("Experience: ", exp)
+	//fmt.Println("Experience Company: ", *exp.Company)
+	//fmt.Println("Experience.Position: ", *exp.Position)
+
+	lpost := new(Post)
+	err_lst, lst := GetList(lpost, 0)
+
+	if err_lst != nil {
+		Error.Println(err_lst)
+	}
+
+	for _, val := range lst {
+		Info.Println(val)
+	}
 	// Create a Config struct for server later on
 	// Do not use middlewares here.
 	//

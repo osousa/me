@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"fmt"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -73,6 +72,8 @@ func SetElem(in_type, field string, arg, ptr interface{}) error {
 		ptr1.SetString(string(arg1.Interface().([]byte)))
 	case "INT":
 		ptr1.SetInt(int64(arg1.Interface().(int64)))
+	case "DATETIME":
+		ptr1.SetString(string(arg1.Interface().([]byte)))
 	default:
 		return errors.New(fmt.Sprintf("Database Type unknown:%s\n", in_type))
 	}
@@ -175,6 +176,83 @@ func (d *db) GetById(structure interface{}, id int) error {
 		if err != nil {
 			panic(err)
 		}
+	}
+	return nil
+}
+
+func NewReflectPtr(structure interface{}) (error, reflect.Value) {
+	structType := reflect.New(reflect.TypeOf(structure).Elem())
+	switch structType.Type().String() {
+	case "*main.Post":
+		n := &Post{10, new(string), new(string), new(string)}
+		structType.Elem().Set(reflect.Indirect(reflect.ValueOf(n)))
+	case "main.Experience":
+		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(Post)).Elem())
+	case "main.User":
+		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(Post)).Elem())
+	default:
+		return errors.New("GetList undefined Type"), reflect.ValueOf(nil)
+	}
+	return nil, structType
+}
+
+// structure parameter must be an address pointing to a struct type val and its
+// fields should be pointers,otherwise it will throw an error. It applies where
+// pointers are needed, excluding for example: int, float,etc. Make sure you'll
+// set the right types beforehand . This will later fetch the field by tag, and
+// not "Id" named field
+func (d *db) GetList(structure interface{}, list *[]interface{}, id int) error {
+	structPtr := reflect.ValueOf(structure)
+	struct_name := structPtr.Type().Elem().Name()
+	if structPtr.Type().Kind() != reflect.Ptr {
+		return errors.New("You must Dereference Struct")
+	}
+
+	columns, fields, _ := structToSlices(structure)
+	row, err := d.db.Query("SELECT "+strings.Join(columns[:], ", ")+" FROM "+struct_name+" WHERE ID > ? ORDER BY ID LIMIT 5", strconv.Itoa(id))
+	defer row.Close()
+	if err != nil || err == sql.ErrNoRows {
+		panic(err.Error())
+	}
+
+	colTypes, err := row.ColumnTypes()
+	values := make([]interface{}, len(columns))
+	scan_args := make([]interface{}, len(columns))
+	for i := range values {
+		scan_args[i] = &values[i]
+	}
+
+	interfaceSlice := make([]reflect.Value, 0)
+
+	if row.Next() {
+		err = row.Scan(scan_args...)
+		if err != nil {
+			panic(err.Error())
+		}
+		_, structType := NewReflectPtr(structure)
+		interfaceSlice = append(interfaceSlice, structType)
+		for i, arg := range scan_args {
+			err := SetElem(colTypes[i].DatabaseTypeName(), fields[i], arg, structType.Elem().FieldByName(fields[i]))
+			if err != nil {
+				panic(err)
+			}
+		}
+		for row.Next() {
+			err = row.Scan(scan_args...)
+			_, structType2 := NewReflectPtr(structure)
+			interfaceSlice = append(interfaceSlice, structType2)
+			for i, arg := range scan_args {
+				err := SetElem(colTypes[i].DatabaseTypeName(), fields[i], arg, structType2.Elem().FieldByName(fields[i]).Addr())
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+	} else {
+		return errors.New(fmt.Sprintf("%s objects with equal or greater than Id %d do not exist", struct_name, id))
+	}
+	for _, val := range interfaceSlice {
+		*list = append(*list, val.Elem())
 	}
 	return nil
 }

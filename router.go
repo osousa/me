@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -30,12 +31,14 @@ type Extend interface{}
 // parameter. An optional slice of type Middleware should be passed as the last
 // parameter in order to manipulate the *Request accordingly.See middlewares.go
 func (r *Router) SetRoutes() {
-	r.AddRoute("GET", "/", home, NewController("home"), nil)
-	r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, NewController("about"), nil)
-	r.AddRoute("GET", "/contact", contact, NewController("home"), nil)
-	r.AddRoute("GET", "/api/widgets", apiGetWidgets, NewController("home"), nil)
-	r.AddRoute("POST", "/admin", admin, NewController("home"), []Middleware{r.middlewares.auth})
+	r.AddRoute("GET", "/", home, NewController(Home{}, "home").(Home), nil)
+	r.AddRoute("GET", "/blog/([0-9]+)/([^/]+)", post, NewController(PostControl{}, "blog").(PostControl), nil)
+	r.AddRoute("GET", "/blog/([0-9]+)", blog, NewController(Blog{}, "blog").(Blog), nil)
+	r.AddRoute("GET", "/blog", blog, NewController(Blog{}, "blog").(Blog), nil)
+	r.AddRoute("GET", "/contact", contact, NewController(Contact{}, "contact").(Contact), nil)
+	r.AddRoute("POST", "/admin", admin, NewController(Admin{}, "admin").(Admin), []Middleware{r.middlewares.auth})
 	/*
+	   r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, NewController("about"), nil)
 	   r.AddRoute("POST", "/api/widgets", apiCreateWidget, NewController("home"))
 	   r.AddRoute("POST", "/api/widgets/([^/]+)/parts", apiCreateWidgetPart, NewController("home"))
 	   r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/update", apiUpdateWidgetPart, NewController("home"))
@@ -108,12 +111,21 @@ type ctxKey struct{}
 
 // Extract URL parameter that matched against the regex and was passed through
 // Context on http.Request,the index will dictate the position to be extracted
-func getField(r *http.Request, index int) (string, Controller) {
+func getFields(r *http.Request, keys []string) (map[string]string, Controller) {
 	fields := r.Context().Value(ctxKey{}).(struct {
 		matches    []string
 		controller Controller
 	})
-	return fields.matches[index], fields.controller
+
+	fields_map := make(map[string]string)
+
+	Debug.Println(keys)
+	Debug.Println(fields.matches)
+	for i, value := range fields.matches[1:] {
+		fields_map[keys[i]] = value
+	}
+
+	return fields_map, fields.controller
 }
 
 func admin(w http.ResponseWriter, r *http.Request) {
@@ -121,28 +133,36 @@ func admin(w http.ResponseWriter, r *http.Request) {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-	_, controller := getField(r, 0)
-	controller.Execute(w)
+	fields_map, controller := getFields(r, []string{"id"})
+	controller.Execute(w, fields_map)
+}
+
+func blog(w http.ResponseWriter, r *http.Request) {
+	fields_map, controler := getFields(r, []string{"page"})
+	Warning.Println(fields_map)
+	log.Println(fields_map)
+	controler.Execute(w, fields_map)
+}
+
+func post(w http.ResponseWriter, r *http.Request) {
+	fields_map, controler := getFields(r, []string{"id", "title"})
+	log.Println(fields_map)
+	controler.Execute(w, fields_map)
 }
 
 func contact(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "contact\n")
 }
 
-func apiGetWidgets(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "apiGetWidgets\n")
-}
-
 func apiCreateWidget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "apiCreateWidget\n")
 }
 
+/*
 func apiUpdateWidget(w http.ResponseWriter, r *http.Request) {
-	_, controller := getField(r, 0)
+	_, controller := getFields(r, )
 	controller.Execute(w)
 }
-
-/*
 func apiCreateWidgetPart(w http.ResponseWriter, r *http.Request) {
     slug := getField(r, 0)
     fmt.Fprintf(w, "apiCreateWidgetPart %s\n", slug)

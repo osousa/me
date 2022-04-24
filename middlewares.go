@@ -28,35 +28,31 @@ type Middleware_Auth struct {
 	name string
 }
 
+// Function to initialize Middlewares struct , update if new implementations of
+// Middleware are made , otherwise they will not be taken into effect properly.
 func InitMiddlewares(name string) Middlewares {
 	return Middlewares{name: name, common: []Middleware{}}
 }
 
+// Creates a Middleware repository for easy access all in one place. The struct
+// Middlewares has a slice of Middleware to accomodate all the middlewares used
+// on each response/request . Other types of Middleware should be created as to
+// allow for arbitrary use of each
 func NewMiddlewares(name string) Middlewares {
 	m := InitMiddlewares(name)
 	m.SetCommonMiddlewares()
-	m.SetAuthMiddleware()
 	return m
 }
 
-func NewAuth(name string) Middleware_Auth {
-	return Middleware_Auth{name}
-}
-
-func NewSecureHeaders(name string) Middleware_SecureHeaders {
-	return Middleware_SecureHeaders{name, nil}
-}
-
-func (m *Middlewares) SetAuthMiddleware() {
-	auth := NewAuth("auth")
-	m.auth = auth
-}
-
-//
+// Define common middlewares to be used at all times for each request/response.
+// Currently there is no way to specify to which of the two or even both to see
+// them applied. Future revisions should allow to set this option
 func (m *Middlewares) SetCommonMiddlewares() {
-	headers := NewSecureHeaders("default")
-	headers.SetSecureHeaders()
-	m.common = append(m.common, headers)
+	secure_headers := Middleware_SecureHeaders{"secureheaders", nil}
+	secure_headers.SetSecureHeaders()
+	auth_headers := Middleware_Auth{"auth"}
+	m.common = append(m.common, auth_headers)
+	m.common = append(m.common, secure_headers)
 }
 
 // Add at will security headers, these are added at each outgoing http.Response
