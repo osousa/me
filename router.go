@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -32,10 +31,12 @@ type Extend interface{}
 // parameter in order to manipulate the *Request accordingly.See middlewares.go
 func (r *Router) SetRoutes() {
 	r.AddRoute("GET", "/", home, NewController(Home{}, "home").(Home), nil)
-	r.AddRoute("GET", "/blog/([0-9]+)/([^/]+)", post, NewController(PostControl{}, "blog").(PostControl), nil)
+	r.AddRoute("GET", "/static/(.+)", static, NewController(Home{}, "home").(Home), nil)
+	r.AddRoute("GET", "/blog/([0-9]+)/([^/]+)", post, NewController(PostControl{}, "post").(PostControl), nil)
 	r.AddRoute("GET", "/blog/([0-9]+)", blog, NewController(Blog{}, "blog").(Blog), nil)
 	r.AddRoute("GET", "/blog", blog, NewController(Blog{}, "blog").(Blog), nil)
 	r.AddRoute("GET", "/contact", contact, NewController(Contact{}, "contact").(Contact), nil)
+	r.AddRoute("GET", "/about", about, NewController(About{}, "about").(About), nil)
 	r.AddRoute("POST", "/admin", admin, NewController(Admin{}, "admin").(Admin), []Middleware{r.middlewares.auth})
 	/*
 	   r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, NewController("about"), nil)
@@ -59,8 +60,7 @@ func NewRouter(name string, midwares Middlewares) Router {
 }
 
 // Appends  new Route to Routes from Router. Pay attention to what patterns are
-// added to avoid vulnerabilites.They should be fairly strict, the router isn't
-// sophisticated, things can go wrong quickly
+// added to avoid vulnerabilites.They should be fairly strict. Later adding reg
 func (r *Router) AddRoute(method, pattern string, handler http.HandlerFunc, controller Controller, mware []Middleware) {
 	r.routes = append(r.routes, route{method, regexp.MustCompile("^" + pattern + "$"), handler, mware, controller})
 }
@@ -128,6 +128,12 @@ func getFields(r *http.Request, keys []string) (map[string]string, Controller) {
 	return fields_map, fields.controller
 }
 
+func static(w http.ResponseWriter, r *http.Request) {
+	Warning.Println("reached static")
+	fs := http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static")))
+	fs.ServeHTTP(w, r)
+}
+
 func admin(w http.ResponseWriter, r *http.Request) {
 
 }
@@ -139,19 +145,22 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func blog(w http.ResponseWriter, r *http.Request) {
 	fields_map, controler := getFields(r, []string{"page"})
-	Warning.Println(fields_map)
-	log.Println(fields_map)
 	controler.Execute(w, fields_map)
 }
 
 func post(w http.ResponseWriter, r *http.Request) {
 	fields_map, controler := getFields(r, []string{"id", "title"})
-	log.Println(fields_map)
 	controler.Execute(w, fields_map)
 }
 
 func contact(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "contact\n")
+	fields_map, controler := getFields(r, []string{})
+	controler.Execute(w, fields_map)
+}
+
+func about(w http.ResponseWriter, r *http.Request) {
+	fields_map, controler := getFields(r, []string{})
+	controler.Execute(w, fields_map)
 }
 
 func apiCreateWidget(w http.ResponseWriter, r *http.Request) {

@@ -184,7 +184,7 @@ func NewReflectPtr(structure interface{}) (error, reflect.Value) {
 	structType := reflect.New(reflect.TypeOf(structure).Elem())
 	switch structType.Type().String() {
 	case "*main.Post":
-		n := &Post{10, new(string), new(string), new(string)}
+		n := &Post{10, new(string), new(string), new(string), new(string), new(string)}
 		structType.Elem().Set(reflect.Indirect(reflect.ValueOf(n)))
 	case "main.Experience":
 		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(Post)).Elem())

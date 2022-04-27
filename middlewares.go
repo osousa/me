@@ -60,8 +60,8 @@ func (m *Middlewares) SetCommonMiddlewares() {
 // allowing CORS violations, for example
 func (s *Middleware_SecureHeaders) SetSecureHeaders() {
 	s.header = map[string]string{
-		"Content-Security-Policy":      "default-src 'self' osousa.me; connect-src 'self';",
-		"Content-Type":                 "text/html;",
+		//"Content-Security-Policy": "default-src 'self' osousa.me; connect-src 'self'; style-src 'self'; script-src 'nonce-dd55ea695fb7c34c29a07ce4e56488ba'; ",
+		//"Content-Type":                 "text/html;",
 		"X-XSS-Protection":             "1; mode=block",
 		"Cross-Origin-Resource-Policy": "same-site",
 		"X-Content-Type-Options":       "nosniff",

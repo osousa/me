@@ -12,10 +12,12 @@ type User struct {
 }
 
 type Post struct {
-	Id    int     `db:"id"`
-	Title *string `db:"title"`
-	Body  *string `db:"body"`
-	Date  *string `db:"date"`
+	Id       int     `db:"id"`
+	Title    *string `db:"title"`
+	Body     *string `db:"body"`
+	Date     *string `db:"date"`
+	Url      *string `db:"url"`
+	Abstract *string `db:"abstract"`
 }
 
 type Experience struct {
@@ -38,6 +40,11 @@ type Object interface {
 	GetList(int, *[]interface{}) error
 	GetById(int) error
 	Save() error
+}
+
+func NewPost(id int, title, body, date, url, abstract *string) *Post {
+	post := &Post{id, title, body, date, url, abstract}
+	return post
 }
 
 // To save a variable of type struct to the database , we use the save() method
@@ -96,7 +103,7 @@ func (u *User) GetById(user_id int) error {
 // value should exist on a database as a primary key of the corresponding table
 // with the same name as the struct (Experience in this case)
 func (e *Post) GetById(id int) error {
-	tmp := &Post{0, new(string), new(string), new(string)}
+	tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
 
 	err := DB.GetById(tmp, id)
 	if err != nil {
@@ -107,7 +114,7 @@ func (e *Post) GetById(id int) error {
 }
 
 func (e *Post) GetList(id int, list *[]interface{}) error {
-	tmp := &Post{0, new(string), new(string), new(string)}
+	tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
 	err := DB.GetList(tmp, list, id)
 	for i, val := range *list {
 		v := val.(reflect.Value)
