@@ -101,15 +101,24 @@ func structToStuctFieldString(structure interface{}, strField reflect.StructFiel
 // of the values from key tag "db", the 2nd a string slice of the corresponding
 // field names of said struct,  and the 3rd a reflect.StructField slice contain
 // each the params pertaining to the field itself in struct type. strucutre can
-// and should be either a dereferenced pointer or struct value
-func structToSlices(structure interface{}) ([]string, []string, []reflect.StructField) {
+// and should be either a dereferenced pointer or struct value.  "ignore" param
+// contains a list of strings with db column names to ignore. It can be nil
+func structToSlices(structure interface{}, ignore []string) ([]string, []string, []reflect.StructField) {
+	contains := func(list []string, val string) bool {
+		for _, v := range list {
+			if v == val {
+				return true
+			}
+		}
+		return false
+	}
 	structPtr := reflect.TypeOf(structure)
 	columns := []string{}
 	fields := []string{}
 	values := make([]reflect.StructField, 0)
 	for i := 0; i < structPtr.Elem().NumField(); i++ {
 		col := structPtr.Elem().Field(i).Tag.Get("db")
-		if col != "" {
+		if col != "" && !contains(ignore, structPtr.Elem().Field(i).Name) {
 			fields = append(fields, structPtr.Elem().Field(i).Name)
 			values = append(values, structPtr.Elem().Field(i))
 			columns = append(columns, "`"+col+"`")
@@ -136,6 +145,22 @@ func structFieldFromTag(sFieldSlice []reflect.StructField, tag_key, tag_val stri
 	return alias
 }
 
+//
+//
+//
+//
+//
+func removeStructField(sFieldSlice []reflect.StructField, tag_key string) []reflect.StructField {
+	var sfield []reflect.StructField
+	for i := 0; i < len(sFieldSlice); i++ {
+		field := sFieldSlice[i]
+		if field.Name == tag_key {
+			sfield = append(sfield, field)
+		}
+	}
+	return sfield
+}
+
 // structure parameter must be an address pointing to a struct type val and its
 // fields should be pointers,otherwise it will throw an error. It applies where
 // pointers are needed, excluding for example: int, float,etc. Make sure you'll
@@ -149,7 +174,7 @@ func (d *db) GetById(structure interface{}, id int) error {
 		return errors.New("You must Dereference Struct")
 	}
 
-	columns, fields, _ := structToSlices(structure)
+	columns, fields, _ := structToSlices(structure, nil)
 
 	row, err := d.db.Query("SELECT "+strings.Join(columns[:], ", ")+" FROM "+struct_name+" WHERE ID = ?", strconv.Itoa(id))
 	defer row.Close()
@@ -184,12 +209,13 @@ func NewReflectPtr(structure interface{}) (error, reflect.Value) {
 	structType := reflect.New(reflect.TypeOf(structure).Elem())
 	switch structType.Type().String() {
 	case "*main.Post":
+		// TODO: Add constructor
 		n := &Post{10, new(string), new(string), new(string), new(string), new(string)}
 		structType.Elem().Set(reflect.Indirect(reflect.ValueOf(n)))
 	case "main.Experience":
-		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(Post)).Elem())
+		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(Experience)).Elem())
 	case "main.User":
-		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(Post)).Elem())
+		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(User)).Elem())
 	default:
 		return errors.New("GetList undefined Type"), reflect.ValueOf(nil)
 	}
@@ -208,7 +234,7 @@ func (d *db) GetList(structure interface{}, list *[]interface{}, id int) error {
 		return errors.New("You must Dereference Struct")
 	}
 
-	columns, fields, _ := structToSlices(structure)
+	columns, fields, _ := structToSlices(structure, nil)
 	row, err := d.db.Query("SELECT "+strings.Join(columns[:], ", ")+" FROM "+struct_name+" WHERE ID > ? ORDER BY ID LIMIT 5", strconv.Itoa(id))
 	defer row.Close()
 	if err != nil || err == sql.ErrNoRows {
@@ -265,7 +291,7 @@ func (d *db) GetList(structure interface{}, list *[]interface{}, id int) error {
 func (db *db) UpdateRow(structure interface{}) error {
 	structPtr := reflect.ValueOf(structure)
 	struct_name := structPtr.Type().Elem().Name()
-	columns, _, vals := structToSlices(structure)
+	columns, _, vals := structToSlices(structure, nil)
 	vals_str := make([]string, 0)
 	if structPtr.Type().Kind() != reflect.Ptr {
 		return errors.New("You must Dereference Struct")
@@ -284,7 +310,50 @@ func (db *db) UpdateRow(structure interface{}) error {
 	}
 
 	values := append(interfaceSlice(vals_str), structPtr.Elem().FieldByName(structFieldFromTag(vals, "db", "id").Name).Interface())
+	Error.Println(vals_str)
 	res, err := db.db.Exec("UPDATE "+struct_name+" SET "+params(columns)+" WHERE id = ?", values...)
+
+	if err != nil {
+		panic(err.Error())
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return errors.New(fmt.Sprint("error:", err))
+	}
+	if rows != 1 {
+		return errors.New(fmt.Sprint("expected single row affected, got: ", rows))
+	}
+	return nil
+}
+
+//
+//
+//
+//
+//
+func (db *db) InsertRow(structure interface{}) error {
+	structPtr := reflect.ValueOf(structure)
+	struct_name := structPtr.Type().Elem().Name()
+	columns, _, vals := structToSlices(structure, []string{"Id"})
+	vals_str := make([]string, 0)
+	if structPtr.Type().Kind() != reflect.Ptr {
+		return errors.New("You must Dereference Struct")
+	}
+
+	params := func(columns []string) string {
+		x := make([]string, 0)
+		for i := 0; i < len(columns); i++ {
+			x = append(x, columns[i]+"=?")
+		}
+		return strings.Join(x[:], ", ")
+	}
+
+	for i := 0; i < len(columns); i++ {
+		vals_str = append(vals_str, structToStuctFieldString(structure, vals[i]))
+	}
+	values := interfaceSlice(vals_str)
+	Warning.Println(values)
+	res, err := db.db.Exec("INSERT INTO "+struct_name+" SET "+params(columns), values...)
 
 	if err != nil {
 		panic(err.Error())

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 )
 
 type Middleware interface {
@@ -98,6 +99,19 @@ func (a Middleware_Auth) UseMiddleware(next http.Handler) http.Handler {
 		password := r.PostForm.Get("password")
 		log.Printf("Username: %s - Password: %s\n", username, password)
 		log.Println(r)
+
+		log.Println("printing cookies now!")
+		log.Println(len(r.Cookies()))
+		if len(r.Cookies()) != 0 {
+			for _, cookie := range r.Cookies() {
+				log.Println(cookie)
+			}
+		} else {
+			expiration := time.Now().Add(365 * 24 * time.Hour)
+			cookie := http.Cookie{Value: "hello", Name: "os_session", Expires: expiration}
+			log.Println(cookie)
+			http.SetCookie(w, &cookie)
+		}
 
 		log.Println("This will authenticate... nice.")
 		next.ServeHTTP(w, r)

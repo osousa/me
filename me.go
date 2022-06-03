@@ -89,13 +89,18 @@ func main() {
 
 	//exp := new(Experience)
 	//err_exp := GetById(exp, 9)
-	////exp := new(Experience)
-	////err_exp := exp.GetById(9)
+	//exp := new(Experience)
+	//err_exp := exp.GetById(9)
 	//fmt.Println(err_exp)
 	//fmt.Println("Experience: ", exp)
 	//fmt.Println("Experience Company: ", *exp.Company)
 	//fmt.Println("Experience.Position: ", *exp.Position)
-
+	//exp2 := &Experience{10, new(string), new(string), new(string)}
+	//*exp2.Description = "good"
+	//*exp2.Position = "nice"
+	//*exp2.Company = "sveet"
+	//exp2.Id = 11
+	//DB.InsertRow(exp2)
 	lpost := new(Post)
 	err_lst, lst := GetList(lpost, 0)
 
