@@ -95,6 +95,7 @@ func (a Middleware_Auth) UseMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Please pass the data as URL form encoded", http.StatusBadRequest)
 			return
 		}
+		log.Printf("Post from website! r.PostFrom = %v\n", r.PostForm)
 		username := r.PostForm.Get("username")
 		password := r.PostForm.Get("password")
 		log.Printf("Username: %s - Password: %s\n", username, password)
