@@ -38,16 +38,6 @@ func (r *Router) SetRoutes() {
 	r.AddRoute("GET", "/contact", contact, NewController(Contact{}, "contact").(Contact), nil)
 	r.AddRoute("GET", "/about", about, NewController(About{}, "about").(About), nil)
 	r.AddRoute("POST", "/admin", admin, NewController(Admin{}, "admin").(Admin), []Middleware{r.middlewares.auth})
-	/*
-	   r.AddRoute("GET", "/api/widgets/([^/]+)", apiUpdateWidget, NewController("about"), nil)
-	   r.AddRoute("POST", "/api/widgets", apiCreateWidget, NewController("home"))
-	   r.AddRoute("POST", "/api/widgets/([^/]+)/parts", apiCreateWidgetPart, NewController("home"))
-	   r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/update", apiUpdateWidgetPart, NewController("home"))
-	   r.AddRoute("POST", "/api/widgets/([^/]+)/parts/([0-9]+)/delete", apiDeleteWidgetPart, NewController("home"))
-	   r.AddRoute("GET", "/([^/]+)", widget, NewController("home"))
-	   r.AddRoute("GET", "/([^/]+)/admin", widgetAdmin, NewController("home"))
-	   r.AddRoute("POST", "/([^/]+)/image", widgetImage, NewController("home"))
-	*/
 }
 
 // Instantiating Router named name with Middlewares slice.  These are geneneric
@@ -116,15 +106,10 @@ func getFields(r *http.Request, keys []string) (map[string]string, Controller) {
 		matches    []string
 		controller Controller
 	})
-
 	fields_map := make(map[string]string)
-
-	Debug.Println(keys)
-	Debug.Println(fields.matches)
 	for i, value := range fields.matches[1:] {
 		fields_map[keys[i]] = value
 	}
-
 	return fields_map, fields.controller
 }
 

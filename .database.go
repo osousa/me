@@ -1,73 +1,41 @@
-package main
+package chat
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type Database interface {
-	GetState() bool
-	GetById(interface{}, int) error
-	GetByPk(a, b interface{}, c string) error
-	GetList(interface{}, *[]interface{}, int) error
-	InsertRow(interface{}) error
-	UpdateRow(interface{}) error
-	RawQueryRow(string) (*string, error)
-	RawQuery(string) error
-}
-
-type SQLdatabase struct {
+type db struct {
 	db        *sql.DB
 	connected bool
 	name      string
 }
 
-func NewDatabase(sqldb *sql.DB, name string) Database {
-	return &SQLdatabase{
-		db:        sqldb,
-		connected: true,
-		name:      name,
-	}
+func (d *db) setConnectedState(state bool) {
+	d.connected = state
 }
 
-func (d SQLdatabase) GetState() bool {
+func (d db) GetConnState() bool {
 	return d.connected
 }
 
 // Performs a connection to the database passed as "name" parameter and it must
 // be referenced on the  .ENV file followed by the password in order to connect
 // otherwise a panic occurs. There is no need to defer Disconnect.
-func ConnectSQL(name, password, database string) (Database, error) {
-	dbase, err := sql.Open("mysql", name+":"+password+"@tcp(127.0.0.1:3306)/")
+func ConnectDB(name, password, database string) (*db, error) {
+	dbase, err := sql.Open("mysql", name+":"+password+"@tcp(127.0.0.1:3306)/"+database)
 	if err != nil {
-		log.Printf("Error %s connecting to mysql\n", err)
-		return nil, err
+		panic("Unable to connect to db")
 	}
-	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-	_, err = dbase.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+database)
-	if err != nil {
-		log.Printf("Error %s when creating DB\n", err)
-		return nil, err
-	}
-	dbase.Close()
-	dbase, err = sql.Open("mysql", name+":"+password+"@tcp(127.0.0.1:3306)/"+database)
-	if err != nil {
-		log.Printf("Error %s using DB\n", err)
-		return nil, err
-	}
+	db := &db{db: dbase, connected: false, name: "osousa"}
 
-	db := NewDatabase(dbase, name)
-	DB = db
+	db.setConnectedState(true)
 	return db, nil
 }
 
@@ -177,11 +145,20 @@ func structFieldFromTag(sFieldSlice []reflect.StructField, tag_key, tag_val stri
 	return alias
 }
 
-func (d *SQLdatabase) GetById(structure interface{}, id int) error {
-	var inderface interface{}
-	inderface = id
-	d.GetByPk(structure, inderface, "id")
-	return nil
+//
+//
+//
+//
+//
+func removeStructField(sFieldSlice []reflect.StructField, tag_key string) []reflect.StructField {
+	var sfield []reflect.StructField
+	for i := 0; i < len(sFieldSlice); i++ {
+		field := sFieldSlice[i]
+		if field.Name == tag_key {
+			sfield = append(sfield, field)
+		}
+	}
+	return sfield
 }
 
 // structure parameter must be an address pointing to a struct type val and its
@@ -189,17 +166,7 @@ func (d *SQLdatabase) GetById(structure interface{}, id int) error {
 // pointers are needed, excluding for example: int, float,etc. Make sure you'll
 // set the right types beforehand . This will later fetch the field by tag, and
 // not "Id" named field
-func (d *SQLdatabase) GetByPk(structure, pk interface{}, field string) error {
-	id := reflect.ValueOf(pk)
-	var strid string
-	if id.Type() == reflect.TypeOf(0) {
-		strid = strconv.Itoa(id.Interface().(int))
-	} else if id.Type() == reflect.TypeOf("") {
-		strid = id.Interface().(string)
-
-	} else {
-		log.Panic("pk value must be string or int")
-	}
+func (d *db) GetById(structure interface{}, id int) error {
 	structPtr := reflect.ValueOf(structure)
 	struct_name := structPtr.Type().Elem().Name()
 
@@ -209,7 +176,7 @@ func (d *SQLdatabase) GetByPk(structure, pk interface{}, field string) error {
 
 	columns, fields, _ := structToSlices(structure, nil)
 
-	row, err := d.db.Query("SELECT "+strings.Join(columns[:], ", ")+" FROM "+struct_name+" WHERE "+field+"= ?", strid)
+	row, err := d.db.Query("SELECT "+strings.Join(columns[:], ", ")+" FROM "+struct_name+" WHERE ID = ?", strconv.Itoa(id))
 	defer row.Close()
 	if err != nil || err == sql.ErrNoRows {
 		panic(err.Error())
@@ -227,7 +194,7 @@ func (d *SQLdatabase) GetByPk(structure, pk interface{}, field string) error {
 			panic(err.Error())
 		}
 	} else {
-		return fmt.Errorf("%s object with Id %v does not exist", struct_name, id)
+		return fmt.Errorf("%s object with Id %d does not exist", struct_name, id)
 	}
 	for i, arg := range scan_args {
 		err := SetElem(colTypes[i].DatabaseTypeName(), fields[i], arg, structPtr.Elem().FieldByName(fields[i]).Addr())
@@ -260,7 +227,7 @@ func NewReflectPtr(structure interface{}) (error, reflect.Value) {
 // pointers are needed, excluding for example: int, float,etc. Make sure you'll
 // set the right types beforehand . This will later fetch the field by tag, and
 // not "Id" named field
-func (d *SQLdatabase) GetList(structure interface{}, list *[]interface{}, id int) error {
+func (d *db) GetList(structure interface{}, list *[]interface{}, id int) error {
 	structPtr := reflect.ValueOf(structure)
 	struct_name := structPtr.Type().Elem().Name()
 	if structPtr.Type().Kind() != reflect.Ptr {
@@ -321,7 +288,7 @@ func (d *SQLdatabase) GetList(structure interface{}, list *[]interface{}, id int
 // created yet. Use Create() first. If said struct's method UpdateRow is called
 // without any prior changes made to it, an error will result showing zero rows
 // affected.
-func (db *SQLdatabase) UpdateRow(structure interface{}) error {
+func (db *db) UpdateRow(structure interface{}) error {
 	structPtr := reflect.ValueOf(structure)
 	struct_name := structPtr.Type().Elem().Name()
 	columns, _, vals := structToSlices(structure, nil)
@@ -343,6 +310,7 @@ func (db *SQLdatabase) UpdateRow(structure interface{}) error {
 	}
 
 	values := append(interfaceSlice(vals_str), structPtr.Elem().FieldByName(structFieldFromTag(vals, "db", "id").Name).Interface())
+	Error.Println(vals_str)
 	res, err := db.db.Exec("UPDATE "+struct_name+" SET "+params(columns)+" WHERE id = ?", values...)
 
 	if err != nil {
@@ -358,48 +326,12 @@ func (db *SQLdatabase) UpdateRow(structure interface{}) error {
 	return nil
 }
 
-// This should be used in the cnotext of database manipulation queries, such as
-// creating tables, droping tables, creating procedures,etc. Should not be used
-// to query the database itself,and it only works on the context of the present
-// in use database
-func (db *SQLdatabase) RawQueryRow(query string) (*string, error) {
-	result := new(string)
-	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-	row := db.db.QueryRowContext(ctx, query)
-	err := row.Scan(result)
-	if err != nil {
-		return nil, errors.New(fmt.Sprint("error:", err))
-	}
-	return result, nil
-}
-
-// This should be used in the cnotext of database manipulation queries, such as
-// creating tables, droping tables, creating procedures,etc. Should not be used
-// to query the database itself,and it only works on the context of the present
-// in use database
-func (db *SQLdatabase) RawQuery(query string) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-	res, err := db.db.ExecContext(ctx, query)
-	if err != nil {
-		log.Printf("Error %s executing raw query", err)
-		return err
-	}
-	_, err = res.RowsAffected()
-	if err != nil {
-		log.Printf("Error %s when getting rows affected", err)
-		return err
-	}
-	return nil
-}
-
 //
 //
 //
 //
 //
-func (db *SQLdatabase) InsertRow(structure interface{}) error {
+func (db *db) InsertRow(structure interface{}) error {
 	structPtr := reflect.ValueOf(structure)
 	struct_name := structPtr.Type().Elem().Name()
 	columns, _, vals := structToSlices(structure, []string{"Id"})
@@ -420,7 +352,7 @@ func (db *SQLdatabase) InsertRow(structure interface{}) error {
 		vals_str = append(vals_str, structToStuctFieldString(structure, vals[i]))
 	}
 	values := interfaceSlice(vals_str)
-	log.Println(values)
+	Warning.Println(values)
 	res, err := db.db.Exec("INSERT INTO "+struct_name+" SET "+params(columns), values...)
 
 	if err != nil {

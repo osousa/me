@@ -72,7 +72,10 @@ func (c PostControl) Execute(w io.Writer, fields_map map[string]string) {
 
 func (c Home) Execute(w io.Writer, fields_map map[string]string) {
 	post := new(Post)
-	GetById(post, 1)
+	err := GetLast(post)
+	if err != nil {
+		log.Printf("Error occured: %s", err)
+	}
 	c.template.ExecuteTemplate(w, c.name, map[string]interface{}{"p": struct {
 		Post *Post
 	}{Post: post}})
@@ -99,9 +102,7 @@ func NewController(typeCtrl interface{}, name string) interface{} {
 
 	tpl, err := template.New("").Funcs(template.FuncMap{
 		"formatDate": func(datetime string) string {
-			Error.Println(datetime)
 			t, _ := time.Parse("2006-01-02 15:04:00", datetime)
-			Error.Println(t)
 			return t.Format("January 1, 2006")
 		},
 	}).ParseFiles(wd+"/web/html/"+name+".tpl", wd+"/web/html/base.tpl")

@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strconv"
 )
 
 type User struct {
@@ -39,6 +40,7 @@ type Exp interface {
 type Object interface {
 	GetList(int, *[]interface{}) error
 	GetById(int) error
+	GetLast() error
 	Save() error
 }
 
@@ -113,6 +115,18 @@ func (e *Post) GetById(id int) error {
 	return nil
 }
 
+func (e *Post) GetLast() error {
+	tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
+	str, err := DB.RawQueryRow("select id from Post ORDER BY id DESC LIMIT 1;")
+	if err != nil {
+		return err
+	}
+	id, _ := strconv.Atoi(*str)
+	GetById(tmp, id)
+	*e = *tmp
+	return nil
+}
+
 func (e *Post) GetList(id int, list *[]interface{}) error {
 	tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
 	err := DB.GetList(tmp, list, id)
@@ -142,7 +156,6 @@ func (e *User) GetList(id int, list *[]interface{}) error {
 func (e *Experience) GetList(id int, list *[]interface{}) error {
 	tmp := &Experience{0, new(string), new(string), new(string)}
 	err := DB.GetList(tmp, list, id)
-
 	if err != nil {
 		return err
 	}
@@ -172,6 +185,10 @@ func (e *Experience) GetById(id int) error {
 // in place, no error should return if Get is performed correctly
 func GetById(o Object, id int) error {
 	return o.GetById(id)
+}
+
+func GetLast(o Object) error {
+	return o.GetLast()
 }
 
 // Parameter "o" of Type Object accepts any variable that implements the Object

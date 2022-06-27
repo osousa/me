@@ -95,14 +95,12 @@ func (a Middleware_Auth) UseMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Please pass the data as URL form encoded", http.StatusBadRequest)
 			return
 		}
-		log.Printf("Post from website! r.PostFrom = %v\n", r.PostForm)
-		username := r.PostForm.Get("username")
-		password := r.PostForm.Get("password")
-		log.Printf("Username: %s - Password: %s\n", username, password)
-		log.Println(r)
-
-		log.Println("printing cookies now!")
-		log.Println(len(r.Cookies()))
+		//log.Printf("Post from website! r.PostFrom = %v\n", r.PostForm)
+		//username := r.PostForm.Get("username")
+		//password := r.PostForm.Get("password")
+		//log.Printf("Username: %s - Password: %s\n", username, password)
+		//log.Println(r)
+		//log.Println(len(r.Cookies()))
 		if len(r.Cookies()) != 0 {
 			for _, cookie := range r.Cookies() {
 				log.Println(cookie)
@@ -113,8 +111,6 @@ func (a Middleware_Auth) UseMiddleware(next http.Handler) http.Handler {
 			log.Println(cookie)
 			http.SetCookie(w, &cookie)
 		}
-
-		log.Println("This will authenticate... nice.")
 		next.ServeHTTP(w, r)
 	})
 }
