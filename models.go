@@ -10,6 +10,7 @@ type User struct {
 	Name       *string `db:"username"`
 	Pass       *string `db:"password"`
 	Experience *[]Experience
+	db         Database
 }
 
 type Post struct {
@@ -44,9 +45,35 @@ type Object interface {
 	Save() error
 }
 
-func NewPost(id int, title, body, date, url, abstract *string) *Post {
+func NewPost(id int, title, body, date, url, abstract string, db Database) *Post {
 	post := &Post{id, title, body, date, url, abstract}
-	return post
+	_Title := new(string)
+	_Body = &username
+	_Date = &password
+	_Url = &password
+	_Abstract = &password
+	return &User{
+		Id:    id,
+		Title: _Title,
+		Body:  _Body,
+		Date:  _Date,
+		Url:   _Url,
+		db:    db,
+	}
+}
+
+func NewUser(id int, username, password string, exp *[]Experience, db Database) *User {
+	_username := new(string)
+	_password := new(string)
+	_username = &username
+	_password = &password
+	return &User{
+		Id:         id,
+		Name:       _username,
+		Pass:       _password,
+		Experience: exp,
+		db:         db,
+	}
 }
 
 // To save a variable of type struct to the database , we use the save() method
@@ -88,9 +115,13 @@ func (e *Post) Save() error {
 // value should exist on a database as a primary key of the corresponding table
 // with the same name as the struct (User in this case)
 func (u *User) GetById(user_id int) error {
-	tmp := &User{0, new(string), new(string), new([]Experience)}
-
-	err := DB.GetById(tmp, user_id)
+	tmp := NewUser(0, "", "", nil, nil)
+	var err error
+	if u.db == nil {
+		err = DB.GetById(tmp, user_id)
+	} else {
+		err = u.db.GetById(tmp, user_id)
+	}
 	if err != nil {
 		return err
 	}
@@ -105,9 +136,15 @@ func (u *User) GetById(user_id int) error {
 // value should exist on a database as a primary key of the corresponding table
 // with the same name as the struct (Experience in this case)
 func (e *Post) GetById(id int) error {
-	tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
+	//tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
+	tmp := NewPost(0, "", "", "", "", "", nil)
 
-	err := DB.GetById(tmp, id)
+	var err error
+	if u.db == nil {
+		err = DB.GetById(tmp, user_id)
+	} else {
+		err = u.db.GetById(tmp, user_id)
+	}
 	if err != nil {
 		return err
 	}
@@ -143,7 +180,7 @@ func (e *Post) GetList(id int, list *[]interface{}) error {
 }
 
 func (e *User) GetList(id int, list *[]interface{}) error {
-	tmp := &User{0, new(string), new(string), nil}
+	tmp := NewUser(0, "", "", nil, nil)
 
 	err := DB.GetList(tmp, list, id)
 	if err != nil {

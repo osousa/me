@@ -4,28 +4,34 @@ import (
 	mockdb "me/mocks"
 	"testing"
 
-	fake "github.com/brianvoe/gofakeit/v6"
 	"github.com/golang/mock/gomock"
+	//fake "github.com/brianvoe/gofakeit/v6"
 )
 
-func randomAccount() User {
-	return User{
-		Id:         fake.Number(1, 1000),
-		Name:       new(string),
-		Pass:       new(string),
-		Experience: nil,
-	}
-}
-
-func TestGetById(t *testing.T) {
-	account := randomAccount()
-
+func TestGetUserById(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	store := mockdb.NewMockDatabase(ctrl)
+	user := NewUser(0, "", "", nil, store)
 	store.EXPECT().
-		GetById(gomock.Any(), gomock.Eq(account.Id)).Times(1).Return(nil)
+		GetById(gomock.Any(), 0).Times(1).Return(nil)
 
-	store.GetById(account, account.Id)
+	user.GetById(0)
+}
+
+func TestGetPostById(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	store := mockdb.NewMockDatabase(ctrl)
+	post := NewPost(0, "", "", "", "", "", nil, store)
+	store.EXPECT().
+		GetById(gomock.Any(), 0).Times(1).Return(nil)
+
+	post.GetById(0)
+}
+
+func TestGetList(t *testing.T) {
+	//TODO
 }
