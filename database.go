@@ -14,6 +14,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+//go:generate mockgen -package mockdb -destination=mocks/mock_database.go -source=database.go Database
 type Database interface {
 	GetState() bool
 	GetById(interface{}, int) error
@@ -243,7 +244,7 @@ func NewReflectPtr(structure interface{}) (error, reflect.Value) {
 	switch structType.Type().String() {
 	case "*main.Post":
 		// TODO: Add constructor
-		n := &Post{10, new(string), new(string), new(string), new(string), new(string)}
+		n := NewPost(0, "", "", "", "", "", nil)
 		structType.Elem().Set(reflect.Indirect(reflect.ValueOf(n)))
 	case "main.Experience":
 		reflect.ValueOf(&structType).Elem().Set(reflect.ValueOf(new(Experience)).Elem())

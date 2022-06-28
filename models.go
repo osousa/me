@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -20,6 +22,7 @@ type Post struct {
 	Date     *string `db:"date"`
 	Url      *string `db:"url"`
 	Abstract *string `db:"abstract"`
+	db       Database
 }
 
 type Experience struct {
@@ -27,6 +30,7 @@ type Experience struct {
 	Description *string `db:"desc"`
 	Position    *string `db:"position"`
 	Company     *string `db:"company"`
+	db          Database
 	// From        string `db:"from"`
 	// Term        string `db:"term"`
 	// To          string `db:"to"`
@@ -46,19 +50,33 @@ type Object interface {
 }
 
 func NewPost(id int, title, body, date, url, abstract string, db Database) *Post {
-	post := &Post{id, title, body, date, url, abstract}
-	_Title := new(string)
-	_Body = &username
-	_Date = &password
-	_Url = &password
-	_Abstract = &password
-	return &User{
-		Id:    id,
-		Title: _Title,
-		Body:  _Body,
-		Date:  _Date,
-		Url:   _Url,
-		db:    db,
+	_Title := &title
+	_Body := &body
+	_Date := &date
+	_Url := &url
+	_Abstract := &abstract
+	return &Post{
+		Id:       id,
+		Title:    _Title,
+		Body:     _Body,
+		Date:     _Date,
+		Url:      _Url,
+		Abstract: _Abstract,
+		db:       db,
+	}
+}
+
+func NewExperience(id int, desc, pos, company string, db Database) *Experience {
+	_Description := new(string)
+	_Position := new(string)
+	_Company := new(string)
+
+	return &Experience{
+		Id:          id,
+		Description: _Description,
+		Position:    _Position,
+		Company:     _Company,
+		db:          db,
 	}
 }
 
@@ -76,11 +94,23 @@ func NewUser(id int, username, password string, exp *[]Experience, db Database) 
 	}
 }
 
+func (u *User) String() string {
+	return fmt.Sprintf("{Id: %d, Name: %s, Password: %s}", u.Id, *u.Name, *u.Pass)
+}
+
 // To save a variable of type struct to the database , we use the save() method
 // Notice that save wont work if called upon a struct pointer that has not been
 // previously created using  Create()  or does not exist at all in our database
 func (u *User) Save() error {
-	err := DB.UpdateRow(u)
+	var err error
+	if len(*u.Pass) < 3 {
+		return errors.New("Error! Password is too short")
+	}
+	if u.db == nil {
+		err = DB.UpdateRow(u)
+	} else {
+		err = u.db.UpdateRow(u)
+	}
 	if err != nil {
 		return err
 	}
@@ -91,7 +121,12 @@ func (u *User) Save() error {
 // Notice that save wont work if called upon a struct pointer that has not been
 // previously created using  Create()  or does not exist at all in our database
 func (e *Experience) Save() error {
-	err := DB.UpdateRow(e)
+	var err error
+	if e.db == nil {
+		err = DB.UpdateRow(e)
+	} else {
+		err = e.db.UpdateRow(e)
+	}
 	if err != nil {
 		return err
 	}
@@ -102,7 +137,12 @@ func (e *Experience) Save() error {
 // Notice that save wont work if called upon a struct pointer that has not been
 // previously created using  Create()  or does not exist at all in our database
 func (e *Post) Save() error {
-	err := DB.UpdateRow(e)
+	var err error
+	if e.db == nil {
+		err = DB.UpdateRow(e)
+	} else {
+		err = e.db.UpdateRow(e)
+	}
 	if err != nil {
 		return err
 	}
@@ -136,14 +176,13 @@ func (u *User) GetById(user_id int) error {
 // value should exist on a database as a primary key of the corresponding table
 // with the same name as the struct (Experience in this case)
 func (e *Post) GetById(id int) error {
-	//tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
 	tmp := NewPost(0, "", "", "", "", "", nil)
 
 	var err error
-	if u.db == nil {
-		err = DB.GetById(tmp, user_id)
+	if e.db == nil {
+		err = DB.GetById(tmp, id)
 	} else {
-		err = u.db.GetById(tmp, user_id)
+		err = e.db.GetById(tmp, id)
 	}
 	if err != nil {
 		return err
@@ -153,7 +192,7 @@ func (e *Post) GetById(id int) error {
 }
 
 func (e *Post) GetLast() error {
-	tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
+	tmp := NewPost(0, "", "", "", "", "", nil)
 	str, err := DB.RawQueryRow("select id from Post ORDER BY id DESC LIMIT 1;")
 	if err != nil {
 		return err
@@ -165,7 +204,7 @@ func (e *Post) GetLast() error {
 }
 
 func (e *Post) GetList(id int, list *[]interface{}) error {
-	tmp := NewPost(0, new(string), new(string), new(string), new(string), new(string))
+	tmp := NewPost(0, "", "", "", "", "", nil)
 	err := DB.GetList(tmp, list, id)
 	for i, val := range *list {
 		v := val.(reflect.Value)
@@ -191,7 +230,7 @@ func (e *User) GetList(id int, list *[]interface{}) error {
 }
 
 func (e *Experience) GetList(id int, list *[]interface{}) error {
-	tmp := &Experience{0, new(string), new(string), new(string)}
+	tmp := NewExperience(0, "", "", "", nil)
 	err := DB.GetList(tmp, list, id)
 	if err != nil {
 		return err
@@ -206,7 +245,7 @@ func (e *Experience) GetList(id int, list *[]interface{}) error {
 // value should exist on a database as a primary key of the corresponding table
 // with the same name as the struct (Experience in this case)
 func (e *Experience) GetById(id int) error {
-	tmp := &Experience{0, new(string), new(string), new(string)}
+	tmp := NewExperience(0, "", "", "", nil)
 
 	err := DB.GetById(tmp, id)
 	if err != nil {
