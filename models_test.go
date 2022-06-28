@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	//fake "github.com/brianvoe/gofakeit/v6"
 )
 
 func TestGetUserById(t *testing.T) {
