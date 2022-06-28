@@ -25,14 +25,38 @@ func TestGetUserById(t *testing.T) {
 }
 
 func TestGetPostById(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	store := mockdb.NewMockDatabase(ctrl)
-	post := NewPost(0, "", "", "", "", "", store)
-	store.EXPECT().
-		GetById(gomock.Any(), 0).Times(1).Return(nil)
 
-	post.GetById(0)
+	var PostTest = []struct {
+		testname string
+		id       int
+		title    string
+		body     string
+		date     string
+		url      string
+		abstract string
+		err      error
+		db       bool
+	}{
+		{"Correct", 0, "Post title", "Post body", "2022-23-02 00:00:00", "post-title", "lorem ispum abstract", nil, true},
+	}
+
+	for _, tt := range PostTest {
+		t.Run(tt.testname, func(t *testing.T) {
+			var post *Post = nil
+			if tt.db {
+				ctrl := gomock.NewController(t)
+				store := mockdb.NewMockDatabase(ctrl)
+				post = NewPost(tt.id, tt.title, tt.body, tt.date, tt.url, tt.abstract, store)
+				store.EXPECT().GetById(gomock.Any(), 0).Times(1).Return(nil)
+			} else {
+				post = NewPost(tt.id, tt.title, tt.body, tt.date, tt.url, tt.abstract, nil)
+			}
+			err := post.GetById(post.Id)
+			if err != nil && !strings.Contains(tt.err.Error(), err.Error()) {
+				t.Errorf("Error in %v; Test failed: \"%v\"", tt.testname, err)
+			}
+		})
+	}
 }
 
 func TestSaveUser(t *testing.T) {
@@ -65,7 +89,6 @@ func TestSaveUser(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGetList(t *testing.T) {
