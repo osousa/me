@@ -52,6 +52,7 @@ jobs:
         draft: false
         prerelease: false
         release_name: ${{ steps.version.outputs.version }}
+        allowUpdates: true
         tag_name: ${{ steps.extract_branch.outputs.BRANCH_NAME }}
         body_path: CHANGELOG.md
       env:
