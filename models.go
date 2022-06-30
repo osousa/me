@@ -102,15 +102,14 @@ func (u *User) String() string {
 // Notice that save wont work if called upon a struct pointer that has not been
 // previously created using  Create()  or does not exist at all in our database
 func (u *User) Save() error {
-	var err error
 	if len(*u.Pass) < 3 {
 		return errors.New("Error! Password is too short")
 	}
-	if u.db == nil {
-		err = DB.UpdateRow(u)
-	} else {
-		err = u.db.UpdateRow(u)
+	database := u.db
+	if database == nil {
+		database = DB
 	}
+	err := database.UpdateRow(u)
 	if err != nil {
 		return err
 	}
@@ -121,12 +120,11 @@ func (u *User) Save() error {
 // Notice that save wont work if called upon a struct pointer that has not been
 // previously created using  Create()  or does not exist at all in our database
 func (e *Experience) Save() error {
-	var err error
-	if e.db == nil {
-		err = DB.UpdateRow(e)
-	} else {
-		err = e.db.UpdateRow(e)
+	database := e.db
+	if database == nil {
+		database = DB
 	}
+	err := database.UpdateRow(e)
 	if err != nil {
 		return err
 	}
@@ -137,12 +135,11 @@ func (e *Experience) Save() error {
 // Notice that save wont work if called upon a struct pointer that has not been
 // previously created using  Create()  or does not exist at all in our database
 func (e *Post) Save() error {
-	var err error
-	if e.db == nil {
-		err = DB.UpdateRow(e)
-	} else {
-		err = e.db.UpdateRow(e)
+	database := e.db
+	if database == nil {
+		database = DB
 	}
+	err := database.UpdateRow(e)
 	if err != nil {
 		return err
 	}
@@ -156,12 +153,11 @@ func (e *Post) Save() error {
 // with the same name as the struct (User in this case)
 func (u *User) GetById(user_id int) error {
 	tmp := NewUser(0, "", "", nil, nil)
-	var err error
-	if u.db == nil {
-		err = DB.GetById(tmp, user_id)
-	} else {
-		err = u.db.GetById(tmp, user_id)
+	database := u.db
+	if database == nil {
+		database = DB
 	}
+	err := database.GetById(tmp, user_id)
 	if err != nil {
 		return err
 	}
@@ -177,13 +173,14 @@ func (u *User) GetById(user_id int) error {
 // with the same name as the struct (Experience in this case)
 func (e *Post) GetById(id int) error {
 	tmp := NewPost(0, "", "", "", "", "", nil)
-
-	var err error
-	if e.db == nil {
-		err = DB.GetById(tmp, id)
-	} else {
-		err = e.db.GetById(tmp, id)
+	if id < 0 {
+		return errors.New("Post id cannot be negative")
 	}
+	database := e.db
+	if database == nil {
+		database = DB
+	}
+	err := database.GetById(tmp, id)
 	if err != nil {
 		return err
 	}
@@ -192,20 +189,29 @@ func (e *Post) GetById(id int) error {
 }
 
 func (e *Post) GetLast() error {
-	tmp := NewPost(0, "", "", "", "", "", nil)
-	str, err := DB.RawQueryRow("select id from Post ORDER BY id DESC LIMIT 1;")
+	database := e.db
+	if database == nil {
+		database = DB
+	}
+	str, err := database.RawQueryRow("select id from Post ORDER BY id DESC LIMIT 1;")
 	if err != nil {
 		return err
 	}
 	id, _ := strconv.Atoi(*str)
-	GetById(tmp, id)
-	*e = *tmp
+	err = e.GetById(id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (e *Post) GetList(id int, list *[]interface{}) error {
 	tmp := NewPost(0, "", "", "", "", "", nil)
-	err := DB.GetList(tmp, list, id)
+	database := e.db
+	if database == nil {
+		database = DB
+	}
+	err := database.GetList(tmp, list, id)
 	for i, val := range *list {
 		v := val.(reflect.Value)
 		(*list)[i] = v.Interface().(Post)
