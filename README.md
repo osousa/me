@@ -12,12 +12,13 @@ The only external libraries being used are:
 - godotenv
 
 
-TODO
-[x] Basic pagination
-[x] Blog
-[x] Midlewares
-[x] Router
-[x] Controller
-[x] ORM
-[ ] Admin panel
-[ ] wysiwyg tailwind-based
+Includes: 
+
+ - [x] Basic paginatio
+ - [x] Blog
+ - [x] Midlewares
+ - [x] Router
+ - [x] Model/View/Controller
+ - [x] ORM
+ - [ ] Admin panel
+ - [ ] wysiwyg tailwind-based
