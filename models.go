@@ -237,7 +237,11 @@ func (e *User) GetList(id int, list *[]interface{}) error {
 
 func (e *Experience) GetList(id int, list *[]interface{}) error {
 	tmp := NewExperience(0, "", "", "", nil)
-	err := DB.GetList(tmp, list, id)
+	database := e.db
+	if database == nil {
+		database = DB
+	}
+	err := database.GetList(tmp, list, id)
 	if err != nil {
 		return err
 	}
@@ -252,8 +256,11 @@ func (e *Experience) GetList(id int, list *[]interface{}) error {
 // with the same name as the struct (Experience in this case)
 func (e *Experience) GetById(id int) error {
 	tmp := NewExperience(0, "", "", "", nil)
-
-	err := DB.GetById(tmp, id)
+	database := e.db
+	if database == nil {
+		database = DB
+	}
+	err := database.GetById(tmp, id)
 	if err != nil {
 		return err
 	}
