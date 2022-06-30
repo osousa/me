@@ -1,7 +1,23 @@
 # me
 
-![example workflow](https://github.com//osousa/me/actions/workflows/go.yml/badge.svg)
+![passing build](https://github.com//osousa/me/actions/workflows/go.yml/badge.svg)
 
 Dev's website
 
 Built with Go
+
+
+The only external libraries being used are:
+- gomock
+- godotenv
+
+
+TODO
+[x] Basic pagination
+[x] Blog
+[x] Midlewares
+[x] Router
+[x] Controller
+[x] ORM
+[ ] Admin panel
+[ ] wysiwyg tailwind-based
