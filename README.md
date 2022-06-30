@@ -1,6 +1,6 @@
 # me
 
-![example workflow](https://github.com/osousa/me/.github/workflows/main.yml/badge.svg)
+![example workflow](https://github.com/osousa/me/.github/workflows/go.yml/badge.svg)
 
 Dev's website
 
