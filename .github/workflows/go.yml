@@ -53,7 +53,7 @@ jobs:
         prerelease: false
         release_name: ${{ steps.version.outputs.version }}
         allowUpdates: 'tag_name'
-        tag_name: ${{ steps.extract_branch.outputs.BRANCH_NAME }}
+        tag_name: ${{ steps.extract_branch.outputs.version }}
         body_path: CHANGELOG.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
