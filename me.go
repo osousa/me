@@ -28,11 +28,7 @@ func main() {
 	db_name := os.Getenv("DATABASE_NAME")
 	db_user := os.Getenv("DATABASE_USER")
 
-	Info.Println(db_name)
-	Info.Println(db_pass)
-
 	flag.Parse()
-
 	versionPtr := flag.Bool("version", false, "versioning")
 	if *versionPtr != false {
 		fmt.Println(os.Getenv("VERSION"))
