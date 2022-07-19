@@ -28,8 +28,10 @@ func main() {
 	db_name := os.Getenv("DATABASE_NAME")
 	db_user := os.Getenv("DATABASE_USER")
 
-	flag.Parse()
 	versionPtr := flag.Bool("version", false, "versioning")
+	ipaddrPtr := flag.String("ipaddr", "0.0.0.0", "ipaddr from mariadb/mysql to connect to")
+	portPtr := flag.String("port", "3306", "port to connect to mysql/mariadb")
+	flag.Parse()
 	if *versionPtr != false {
 		fmt.Println(os.Getenv("VERSION"))
 		return
@@ -37,7 +39,7 @@ func main() {
 
 	// Fire up the database, no need to disconnect.
 	// Just make sure all connections are deferred/closed.
-	DB, _ = ConnectSQL(db_user, db_pass, db_name)
+	DB, _ = ConnectSQL(db_user, db_pass, db_name, *ipaddrPtr, *portPtr)
 	_ = DB.GetState()
 
 	// Start a router and activate preconfigured routes.

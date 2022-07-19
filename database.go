@@ -47,8 +47,9 @@ func (d SQLdatabase) GetState() bool {
 // Performs a connection to the database passed as "name" parameter and it must
 // be referenced on the  .ENV file followed by the password in order to connect
 // otherwise a panic occurs. There is no need to defer Disconnect.
-func ConnectSQL(name, password, database string) (Database, error) {
-	dbase, err := sql.Open("mysql", name+":"+password+"@tcp(127.0.0.1:3306)/")
+func ConnectSQL(name, password, database, ipaddr, port string) (Database, error) {
+	//dbase, err := sql.Open("mysql", name+":"+password+"@tcp(0.0.0.0:3306)/")
+	dbase, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/", name, password, ipaddr, port))
 	if err != nil {
 		log.Printf("Error %s connecting to mysql\n", err)
 		return nil, err
@@ -61,7 +62,7 @@ func ConnectSQL(name, password, database string) (Database, error) {
 		return nil, err
 	}
 	dbase.Close()
-	dbase, err = sql.Open("mysql", name+":"+password+"@tcp(127.0.0.1:3306)/"+database)
+	dbase, err = sql.Open("mysql", name+":"+password+"@tcp(0.0.0.0:3306)/"+database)
 	if err != nil {
 		log.Printf("Error %s using DB\n", err)
 		return nil, err
