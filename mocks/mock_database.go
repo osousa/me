@@ -5,6 +5,7 @@
 package mockdb
 
 import (
+	sql "database/sql"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -59,6 +60,20 @@ func (m *MockDatabase) GetByPk(a, b interface{}, c string) error {
 func (mr *MockDatabaseMockRecorder) GetByPk(a, b, c interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPk", reflect.TypeOf((*MockDatabase)(nil).GetByPk), a, b, c)
+}
+
+// GetDB mocks base method.
+func (m *MockDatabase) GetDB() *sql.DB {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDB")
+	ret0, _ := ret[0].(*sql.DB)
+	return ret0
+}
+
+// GetDB indicates an expected call of GetDB.
+func (mr *MockDatabaseMockRecorder) GetDB() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDB", reflect.TypeOf((*MockDatabase)(nil).GetDB))
 }
 
 // GetList mocks base method.

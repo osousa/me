@@ -17,6 +17,7 @@ import (
 //go:generate mockgen -package mockdb -destination=mocks/mock_database.go -source=database.go Database
 type Database interface {
 	GetState() bool
+	GetDB() *sql.DB
 	GetById(interface{}, int) error
 	GetByPk(a, b interface{}, c string) error
 	GetList(interface{}, *[]interface{}, int) error
@@ -42,6 +43,10 @@ func NewDatabase(sqldb *sql.DB, name string) Database {
 
 func (d SQLdatabase) GetState() bool {
 	return d.connected
+}
+
+func (d SQLdatabase) GetDB() *sql.DB {
+	return d.db
 }
 
 // Performs a connection to the database passed as "name" parameter and it must

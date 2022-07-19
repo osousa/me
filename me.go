@@ -40,7 +40,8 @@ func main() {
 	// Fire up the database, no need to disconnect.
 	// Just make sure all connections are deferred/closed.
 	DB, _ = ConnectSQL(db_user, db_pass, db_name, *ipaddrPtr, *portPtr)
-	_ = DB.GetState()
+	dbstore := NewDBStore(DB)
+	dbstore.CreateTables()
 
 	// Start a router and activate preconfigured routes.
 	// Middleware association should probably be done here.
