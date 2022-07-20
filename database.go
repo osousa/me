@@ -67,7 +67,7 @@ func ConnectSQL(name, password, database, ipaddr, port string) (Database, error)
 		return nil, err
 	}
 	dbase.Close()
-	dbase, err = sql.Open("mysql", name+":"+password+"@tcp(0.0.0.0:3306)/"+database)
+	dbase, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", name, password, ipaddr, port, database))
 	if err != nil {
 		log.Printf("Error %s using DB\n", err)
 		return nil, err
