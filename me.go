@@ -29,7 +29,7 @@ func main() {
 	db_user := os.Getenv("DATABASE_USER")
 
 	versionPtr := flag.Bool("version", false, "versioning")
-	ipaddrPtr := flag.String("ipaddr", "0.0.0.0", "ipaddr from mariadb/mysql to connect to")
+	ipaddrPtr := flag.String("ipaddr", "127.0.0.1", "ipaddr from mariadb/mysql to connect to")
 	portPtr := flag.String("port", "3306", "port to connect to mysql/mariadb")
 	flag.Parse()
 	if *versionPtr != false {
@@ -39,9 +39,16 @@ func main() {
 
 	// Fire up the database, no need to disconnect.
 	// Just make sure all connections are deferred/closed.
-	DB, _ = ConnectSQL(db_user, db_pass, db_name, *ipaddrPtr, *portPtr)
+	DB, err = ConnectSQL(db_user, db_pass, db_name, *ipaddrPtr, *portPtr)
+	if err != nil {
+		log.Panic(fmt.Printf("Something went wrong while connecting to DB: %s", err.Error()))
+	}
+
 	dbstore := NewDBStore(DB)
-	dbstore.CreateTables()
+	err = dbstore.CreateTables()
+	if err != nil {
+		log.Panic(fmt.Printf("Something went wrong while creating store: %s", err.Error()))
+	}
 
 	// Start a router and activate preconfigured routes.
 	// Middleware association should probably be done here.
