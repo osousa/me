@@ -20,7 +20,7 @@ func (store *DBStore) CreateTables() error {
 	}
 
 	queries := []string{
-		`CREATE TABLE User (
+		`CREATE TABLE if not exists User (
 			  id int(11) NOT NULL AUTO_INCREMENT,
 			  username varchar(100) NOT NULL,
 			  password varchar(100) NOT NULL,

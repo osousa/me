@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"reflect"
 	"strconv"
 )
@@ -16,12 +17,12 @@ type User struct {
 }
 
 type Post struct {
-	Id       int     `db:"id"`
-	Title    *string `db:"title"`
-	Body     *string `db:"body"`
-	Date     *string `db:"date"`
-	Url      *string `db:"url"`
-	Abstract *string `db:"abstract"`
+	Id       int            `db:"id"`
+	Title    *string        `db:"title"`
+	Body     *template.HTML `db:"body"`
+	Date     *string        `db:"date"`
+	Url      *string        `db:"url"`
+	Abstract *string        `db:"abstract"`
 	db       Database
 }
 
@@ -51,14 +52,14 @@ type Object interface {
 
 func NewPost(id int, title, body, date, url, abstract string, db Database) *Post {
 	_Title := &title
-	_Body := &body
+	_Body := template.HTML(fmt.Sprint(body))
 	_Date := &date
 	_Url := &url
 	_Abstract := &abstract
 	return &Post{
 		Id:       id,
 		Title:    _Title,
-		Body:     _Body,
+		Body:     &_Body,
 		Date:     _Date,
 		Url:      _Url,
 		Abstract: _Abstract,
